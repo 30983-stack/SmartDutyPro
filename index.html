@@ -385,3 +385,971 @@ function logout() {
 
 </body>
   </html>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Student Duty ULTRA</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,Tahoma,sans-serif}
+body{margin:0;background:#f4f6fb;color:#263238}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:0}
+.hidden{display:none!important}
+
+/* LOGIN */
+#loginPage{
+ min-height:100vh;display:flex;justify-content:center;align-items:center;
+ background:linear-gradient(135deg,#667eea,#764ba2);padding:20px
+}
+.login-box{
+ width:420px;max-width:100%;background:white;border-radius:28px;
+ padding:35px;box-shadow:0 20px 60px #0004;text-align:center
+}
+.logo{font-size:60px}
+.login-box h1{margin:10px 0 5px}
+.login-box p{color:#777}
+.login-box input,.login-box select{
+ width:100%;padding:14px;margin:7px 0;border:1px solid #ddd;
+ border-radius:12px;outline:none
+}
+.primary{
+ background:linear-gradient(135deg,#667eea,#764ba2);color:white;
+ padding:13px 20px;border-radius:12px;font-weight:bold
+}
+.full{width:100%;margin-top:15px}
+
+/* APP */
+#app{display:none;min-height:100vh}
+.sidebar{
+ position:fixed;left:0;top:0;bottom:0;width:250px;
+ background:#20243a;color:white;padding:20px;z-index:10
+}
+.brand{font-size:22px;font-weight:bold;margin-bottom:25px}
+.nav button{
+ width:100%;padding:13px;margin:4px 0;border-radius:10px;
+ background:transparent;color:#ddd;text-align:left
+}
+.nav button:hover,.nav button.active{background:#667eea;color:white}
+.logout{background:#e74c3c!important;color:white!important}
+.main{margin-left:250px;padding:25px}
+.topbar{
+ background:white;padding:18px 22px;border-radius:18px;
+ display:flex;justify-content:space-between;align-items:center;
+ margin-bottom:22px;box-shadow:0 3px 15px #0000000b
+}
+.topbar h2{margin:0}
+.clock{color:#667eea;font-weight:bold}
+
+.page{display:none}
+.page.active{display:block}
+
+.cards{
+ display:grid;grid-template-columns:repeat(4,1fr);gap:16px
+}
+.card{
+ background:white;padding:20px;border-radius:18px;
+ box-shadow:0 4px 18px #0000000b
+}
+.card .icon{font-size:30px}
+.card h2{font-size:30px;margin:8px 0}
+.card p{margin:0;color:#777}
+
+.panel{
+ background:white;padding:22px;border-radius:18px;
+ margin-top:20px;box-shadow:0 4px 18px #0000000b
+}
+.panel h3{margin-top:0}
+
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+th,td{padding:12px;border-bottom:1px solid #eee;text-align:center}
+th{background:#f0f2ff}
+.badge{
+ display:inline-block;padding:6px 10px;border-radius:20px;font-size:13px
+}
+.ok{background:#d9f7df;color:#16843a}
+.no{background:#ffe0e0;color:#c62828}
+.wait{background:#fff0c9;color:#a36a00}
+.pending{background:#e6e8ff;color:#4c55bd}
+
+.action{
+ padding:7px 10px;border-radius:8px;margin:2px;color:white
+}
+.green{background:#27ae60}
+.red{background:#e74c3c}
+.orange{background:#f39c12}
+.blue{background:#667eea}
+.gray{background:#7f8c8d}
+
+.toolbar{
+ display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px
+}
+.toolbar input,.toolbar select{
+ padding:11px;border:1px solid #ddd;border-radius:10px
+}
+
+.progress{
+ height:12px;background:#eee;border-radius:20px;overflow:hidden
+}
+.progress span{
+ display:block;height:100%;background:#667eea
+}
+
+.modal{
+ position:fixed;inset:0;background:#0008;display:none;
+ justify-content:center;align-items:center;z-index:50;padding:20px
+}
+.modal-box{
+ background:white;width:500px;max-width:100%;border-radius:20px;
+ padding:25px
+}
+.modal-box input,.modal-box textarea,.modal-box select{
+ width:100%;padding:12px;margin:6px 0;border:1px solid #ddd;
+ border-radius:10px
+}
+.close{float:right;background:#eee;border-radius:50%;width:32px;height:32px}
+
+.notice{
+ padding:13px;border-radius:12px;background:#fff7dc;margin:8px 0
+}
+
+@media(max-width:900px){
+ .sidebar{width:70px;padding:10px}
+ .brand{font-size:0}
+ .brand:after{content:"🏫";font-size:28px}
+ .nav button{font-size:0;text-align:center}
+ .nav button:first-letter{font-size:22px}
+ .main{margin-left:70px}
+ .cards{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:600px){
+ .main{padding:12px}
+ .cards{grid-template-columns:1fr}
+ .topbar{flex-direction:column;align-items:flex-start;gap:8px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+<div class="login-box">
+<div class="logo">🏫</div>
+<h1>Student Duty ULTRA</h1>
+<p>ระบบจัดเวรนักเรียนอัจฉริยะ</p>
+
+<input id="username" placeholder="ชื่อผู้ใช้">
+<input id="password" type="password" placeholder="รหัสผ่าน">
+
+<select id="role">
+<option value="teacher">👨‍🏫 ครู</option>
+<option value="student">👨‍🎓 นักเรียน</option>
+<option value="leader">⭐ หัวหน้าเวร</option>
+</select>
+
+<button class="primary full" onclick="login()">🔐 เข้าสู่ระบบ</button>
+<p id="loginMsg"></p>
+
+<hr>
+<small>
+บัญชีทดลอง<br>
+ครู: teacher / 1234<br>
+นักเรียน: student / 1234<br>
+หัวหน้าเวร: leader / 1234
+</small>
+</div>
+</div>
+
+
+<!-- APP -->
+<div id="app">
+
+<aside class="sidebar">
+<div class="brand">🏫 Student Duty ULTRA</div>
+
+<div class="nav">
+<button onclick="showPage('dashboard',this)">📊 Dashboard</button>
+<button onclick="showPage('schedule',this)">📅 ตารางเวร</button>
+<button onclick="showPage('students',this)">👥 นักเรียน</button>
+<button onclick="showPage('check',this)">⭐ ตรวจเวร</button>
+<button onclick="showPage('requests',this)">📝 คำขอ</button>
+<button onclick="showPage('reports',this)">📈 รายงาน</button>
+<button onclick="showPage('settings',this)">⚙️ ตั้งค่า</button>
+<button class="logout" onclick="logout()">🚪 ออกจากระบบ</button>
+</div>
+</aside>
+
+<main class="main">
+
+<div class="topbar">
+<h2 id="pageTitle">📊 Dashboard</h2>
+<div class="clock" id="clock"></div>
+</div>
+
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="page active">
+
+<div class="cards">
+<div class="card">
+<div class="icon">👥</div>
+<h2 id="statStudents">0</h2>
+<p>นักเรียนทั้งหมด</p>
+</div>
+
+<div class="card">
+<div class="icon">✓</div>
+<h2 id="statDone">0</h2>
+<p>ทำเวรแล้ว</p>
+</div>
+
+<div class="card">
+<div class="icon">✗</div>
+<h2 id="statMiss">0</h2>
+<p>ไม่ทำเวร</p>
+</div>
+
+<div class="card">
+<div class="icon">⏳</div>
+<h2 id="statWait">0</h2>
+<p>รอตรวจ</p>
+</div>
+</div>
+
+<div class="panel">
+<h3>📊 ภาพรวมการทำเวร</h3>
+<p>อัตราการทำเวร</p>
+<div class="progress">
+<span id="progressBar" style="width:0%"></span>
+</div>
+<p id="progressText">0%</p>
+</div>
+
+<div class="panel">
+<h3>🔔 การแจ้งเตือน</h3>
+<div id="notifications"></div>
+</div>
+
+</section>
+
+
+<!-- SCHEDULE -->
+<section id="schedule" class="page">
+
+<div class="panel">
+<h3>📅 ตารางเวร 30 วัน</h3>
+
+<div class="toolbar">
+<input id="searchDuty" placeholder="🔎 ค้นหารหัสนักเรียน"
+oninput="renderSchedule()">
+
+<select id="statusFilter" onchange="renderSchedule()">
+<option value="all">ทุกสถานะ</option>
+<option value="waiting">⏳ รอตรวจ</option>
+<option value="done">✓ ทำแล้ว</option>
+<option value="miss">✗ ไม่ทำ</option>
+</select>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>วันที่</th>
+<th>รหัส</th>
+<th>ชื่อ</th>
+<th>หน้าที่</th>
+<th>สถานะ</th>
+<th>การจัดการ</th>
+</tr>
+</thead>
+<tbody id="scheduleBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+<!-- STUDENTS -->
+<section id="students" class="page">
+
+<div class="panel">
+<h3>👥 รายชื่อนักเรียน</h3>
+
+<div class="toolbar">
+<input id="searchStudent" placeholder="🔎 ค้นหานักเรียน"
+oninput="renderStudents()">
+<button class="primary" onclick="openStudentModal()">＋ เพิ่มนักเรียน</button>
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>รหัส</th>
+<th>ชื่อ</th>
+<th>ห้อง</th>
+<th>คะแนนที่ถูกหัก</th>
+<th>จัดการ</th>
+</tr>
+</thead>
+<tbody id="studentsBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+<!-- CHECK -->
+<section id="check" class="page">
+
+<div class="panel">
+<h3>⭐ หัวหน้าเวรตรวจสอบเวร</h3>
+
+<div class="notice">
+หัวหน้าเวรสามารถกด ✓ เมื่อทำเวรเรียบร้อย หรือ ✗ เมื่อไม่ทำเวร
+</div>
+
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>วันที่</th>
+<th>นักเรียน</th>
+<th>หน้าที่</th>
+<th>สถานะ</th>
+<th>ตรวจ</th>
+</tr>
+</thead>
+<tbody id="checkBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+<!-- REQUESTS -->
+<section id="requests" class="page">
+
+<div class="panel">
+<h3>📝 คำขอหยุด / สลับเวร</h3>
+
+<button class="primary" onclick="openRequestModal()">
+＋ ส่งคำขอ
+</button>
+
+<div class="table-wrap" style="margin-top:15px">
+<table>
+<thead>
+<tr>
+<th>วันที่</th>
+<th>นักเรียน</th>
+<th>ประเภท</th>
+<th>เหตุผล</th>
+<th>สถานะ</th>
+<th>จัดการ</th>
+</tr>
+</thead>
+<tbody id="requestsBody"></tbody>
+</table>
+</div>
+</div>
+</section>
+
+
+<!-- REPORT -->
+<section id="reports" class="page">
+
+<div class="cards">
+<div class="card">
+<div class="icon">📋</div>
+<h2 id="reportTotal">0</h2>
+<p>รายการเวรทั้งหมด</p>
+</div>
+
+<div class="card">
+<div class="icon">✓</div>
+<h2 id="reportDone">0</h2>
+<p>ทำสำเร็จ</p>
+</div>
+
+<div class="card">
+<div class="icon">✗</div>
+<h2 id="reportMiss">0</h2>
+<p>ไม่ทำ</p>
+</div>
+
+<div class="card">
+<div class="icon">📈</div>
+<h2 id="reportRate">0%</h2>
+<p>อัตราสำเร็จ</p>
+</div>
+</div>
+
+<div class="panel">
+<h3>📊 รายงานนักเรียน</h3>
+<div class="table-wrap">
+<table>
+<thead>
+<tr>
+<th>รหัส</th>
+<th>ชื่อ</th>
+<th>ทำแล้ว</th>
+<th>ไม่ทำ</th>
+<th>คะแนนหัก</th>
+</tr>
+</thead>
+<tbody id="reportBody"></tbody>
+</table>
+</div>
+</div>
+
+</section>
+
+
+<!-- SETTINGS -->
+<section id="settings" class="page">
+
+<div class="panel">
+<h3>⚙️ ตั้งค่าระบบ</h3>
+
+<p>📌 จำนวนเวรที่สร้าง: <b>30 วัน</b></p>
+<p>📌 ระบบจัดเก็บข้อมูล: <b>Local Storage</b></p>
+<p>📌 ระบบสามารถใช้งานแบบออฟไลน์ได้</p>
+
+<hr>
+
+<button class="primary" onclick="generateDuties()">
+🔄 สร้างตารางเวรใหม่ 30 วัน
+</button>
+
+<button class="action red" onclick="resetData()">
+⚠️ รีเซ็ตข้อมูลทั้งหมด
+</button>
+
+</div>
+</section>
+
+</main>
+</div>
+
+
+<!-- STUDENT MODAL -->
+<div class="modal" id="studentModal">
+<div class="modal-box">
+<button class="close" onclick="closeModal('studentModal')">×</button>
+<h3>👤 เพิ่มนักเรียน</h3>
+
+<input id="newId" placeholder="รหัสนักเรียน">
+<input id="newName" placeholder="ชื่อ-นามสกุล">
+<input id="newClass" placeholder="ห้อง เช่น ม.5/1">
+
+<button class="primary full" onclick="addStudent()">บันทึก</button>
+</div>
+</div>
+
+
+<!-- REQUEST MODAL -->
+<div class="modal" id="requestModal">
+<div class="modal-box">
+<button class="close" onclick="closeModal('requestModal')">×</button>
+<h3>📝 ส่งคำขอหยุด/สลับเวร</h3>
+
+<input id="requestDate" type="date">
+
+<select id="requestType">
+<option>ขอหยุดเวร</option>
+<option>ขอสลับเวร</option>
+</select>
+
+<textarea id="requestReason"
+placeholder="กรอกเหตุผล"></textarea>
+
+<button class="primary full" onclick="addRequest()">ส่งคำขอ</button>
+</div>
+</div>
+
+
+<script>
+
+/* =========================
+   DATA
+========================= */
+
+const defaultStudents = [
+ {id:"65001",name:"นักเรียน 01",className:"ม.5/1",deduct:0},
+ {id:"65002",name:"นักเรียน 02",className:"ม.5/1",deduct:0},
+ {id:"65003",name:"นักเรียน 03",className:"ม.5/1",deduct:0},
+ {id:"65004",name:"นักเรียน 04",className:"ม.5/1",deduct:0},
+ {id:"65005",name:"นักเรียน 05",className:"ม.5/1",deduct:0},
+ {id:"65006",name:"นักเรียน 06",className:"ม.5/1",deduct:0},
+ {id:"65007",name:"นักเรียน 07",className:"ม.5/1",deduct:0},
+ {id:"65008",name:"นักเรียน 08",className:"ม.5/1",deduct:0}
+];
+
+let students =
+ JSON.parse(localStorage.getItem("sd_students")) ||
+ defaultStudents;
+
+let duties =
+ JSON.parse(localStorage.getItem("sd_duties")) || [];
+
+let requests =
+ JSON.parse(localStorage.getItem("sd_requests")) || [];
+
+let currentUser = null;
+
+function save(){
+ localStorage.setItem("sd_students",JSON.stringify(students));
+ localStorage.setItem("sd_duties",JSON.stringify(duties));
+ localStorage.setItem("sd_requests",JSON.stringify(requests));
+}
+
+
+/* =========================
+   INIT
+========================= */
+
+function init(){
+
+ if(duties.length===0){
+   generateDuties(false);
+ }
+
+ save();
+ updateAll();
+}
+
+function dateText(date){
+ return date.toISOString().split("T")[0];
+}
+
+function generateDuties(show=true){
+
+ duties=[];
+
+ let today=new Date();
+
+ for(let i=0;i<30;i++){
+
+   let d=new Date(today);
+   d.setDate(today.getDate()+i);
+
+   let student=students[i%students.length];
+
+   duties.push({
+     id:Date.now()+i,
+     date:dateText(d),
+     studentId:student.id,
+     task:["กวาดห้อง","ถูพื้น","เก็บขยะ","จัดโต๊ะ"][i%4],
+     status:"waiting",
+     checkedBy:"",
+     checkedAt:""
+   });
+ }
+
+ save();
+ updateAll();
+
+ if(show) alert("สร้างตารางเวร 30 วันเรียบร้อยแล้ว");
+}
+
+
+/* =========================
+   LOGIN
+========================= */
+
+function login(){
+
+ let u=document.getElementById("username").value.trim();
+ let p=document.getElementById("password").value.trim();
+ let r=document.getElementById("role").value;
+
+ let correct=false;
+
+ if(r==="teacher" && u==="teacher" && p==="1234")
+   correct=true;
+
+ if(r==="student" && u==="student" && p==="1234")
+   correct=true;
+
+ if(r==="leader" && u==="leader" && p==="1234")
+   correct=true;
+
+ if(!correct){
+   document.getElementById("loginMsg").innerText=
+   "❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง";
+   document.getElementById("loginMsg").style.color="red";
+   return;
+ }
+
+ currentUser={username:u,role:r};
+
+ localStorage.setItem(
+   "sd_session",
+   JSON.stringify(currentUser)
+ );
+
+ document.getElementById("loginPage").style.display="none";
+ document.getElementById("app").style.display="block";
+
+ applyRole();
+ updateAll();
+}
+
+function logout(){
+
+ currentUser=null;
+ localStorage.removeItem("sd_session");
+
+ document.getElementById("app").style.display="none";
+ document.getElementById("loginPage").style.display="flex";
+}
+
+function applyRole(){
+
+ let role=currentUser.role;
+
+ /*
+  ครู: ทุกอย่าง
+  หัวหน้าเวร: ตรวจเวร + ตาราง
+  นักเรียน: ตาราง + คำขอ
+ */
+
+ if(role==="student"){
+
+   document.querySelectorAll(".nav button").forEach(b=>{
+     if(
+       !b.innerText.includes("Dashboard") &&
+       !b.innerText.includes("ตารางเวร") &&
+       !b.innerText.includes("คำขอ") &&
+       !b.innerText.includes("ออก")
+     ){
+       b.style.display="none";
+     }
+   });
+ }
+
+ if(role==="leader"){
+
+   document.querySelectorAll(".nav button").forEach(b=>{
+     if(
+       !b.innerText.includes("Dashboard") &&
+       !b.innerText.includes("ตารางเวร") &&
+       !b.innerText.includes("ตรวจเวร") &&
+       !b.innerText.includes("ออก")
+     ){
+       b.style.display="none";
+     }
+   });
+ }
+}
+
+
+/* =========================
+   NAVIGATION
+========================= */
+
+function showPage(id,btn){
+
+ document.querySelectorAll(".page")
+ .forEach(p=>p.classList.remove("active"));
+
+ document.getElementById(id).classList.add("active");
+
+ document.querySelectorAll(".nav button")
+ .forEach(b=>b.classList.remove("active"));
+
+ if(btn) btn.classList.add("active");
+
+ let names={
+  dashboard:"📊 Dashboard",
+  schedule:"📅 ตารางเวร",
+  students:"👥 นักเรียน",
+  check:"⭐ ตรวจเวร",
+  requests:"📝 คำขอ",
+  reports:"📈 รายงาน",
+  settings:"⚙️ ตั้งค่า"
+ };
+
+ document.getElementById("pageTitle").innerText=names[id];
+
+ updateAll();
+}
+
+
+/* =========================
+   SCHEDULE
+========================= */
+
+function getStudent(id){
+ return students.find(s=>s.id===id) ||
+ {id:id,name:"ไม่พบข้อมูล",className:"-",deduct:0};
+}
+
+function statusHTML(status){
+
+ if(status==="done")
+   return '<span class="badge ok">✓ ทำแล้ว</span>';
+
+ if(status==="miss")
+   return '<span class="badge no">✗ ไม่ทำ</span>';
+
+ return '<span class="badge wait">⏳ รอตรวจ</span>';
+}
+
+function renderSchedule(){
+
+ let body=document.getElementById("scheduleBody");
+ let search=(document.getElementById("searchDuty")?.value||"").toLowerCase();
+ let filter=document.getElementById("statusFilter")?.value||"all";
+
+ body.innerHTML="";
+
+ duties.forEach(d=>{
+
+   let s=getStudent(d.studentId);
+
+   if(search && !s.id.toLowerCase().includes(search) &&
+      !s.name.toLowerCase().includes(search)) return;
+
+   if(filter!=="all" && d.status!==filter) return;
+
+   let tr=document.createElement("tr");
+
+   tr.innerHTML=`
+   <td>${d.date}</td>
+   <td>${s.id}</td>
+   <td>${s.name}</td>
+   <td>${d.task}</td>
+   <td>${statusHTML(d.status)}</td>
+   <td>
+   ${currentUser?.role!=="student"?
+   `<button class="action green" onclick="setDuty(${d.id},'done')">✓</button>
+    <button class="action red" onclick="setDuty(${d.id},'miss')">✗</button>
+    <button class="action orange" onclick="setDuty(${d.id},'waiting')">⏳</button>`
+   :"ดูข้อมูล"}
+   </td>
+   `;
+
+   body.appendChild(tr);
+ });
+}
+
+
+/* =========================
+   CHECK DUTY
+========================= */
+
+function renderCheck(){
+
+ let body=document.getElementById("checkBody");
+ body.innerHTML="";
+
+ duties.forEach(d=>{
+
+   let s=getStudent(d.studentId);
+
+   body.innerHTML+=`
+   <tr>
+   <td>${d.date}</td>
+   <td>${s.id}<br>${s.name}</td>
+   <td>${d.task}</td>
+   <td>${statusHTML(d.status)}</td>
+   <td>
+   <button class="action green"
+   onclick="setDuty(${d.id},'done')">✓ ทำ</button>
+
+   <button class="action red"
+   onclick="setDuty(${d.id},'miss')">✗ ไม่ทำ</button>
+
+   <button class="action orange"
+   onclick="setDuty(${d.id},'waiting')">⏳</button>
+   </td>
+   </tr>
+   `;
+ });
+}
+
+function setDuty(id,status){
+
+ let d=duties.find(x=>x.id===id);
+ if(!d)return;
+
+ d.status=status;
+ d.checkedBy=currentUser?.username||"";
+ d.checkedAt=new Date().toLocaleString("th-TH");
+
+ /*
+   เมื่อกดไม่ทำ
+   จะส่งเรื่องเข้าสู่ระบบรอครูยืนยัน
+ */
+
+ if(status==="miss"){
+
+   let exists=requests.some(r=>
+    r.dutyId===id && r.type==="แจ้งไม่ทำเวร"
+   );
+
+   if(!exists){
+
+     requests.push({
+       id:Date.now(),
+       dutyId:id,
+       date:d.date,
+       studentId:d.studentId,
+       type:"แจ้งไม่ทำเวร",
+       reason:"หัวหน้าเวรแจ้งว่าไม่ทำเวร",
+       status:"รอครูยืนยัน"
+     });
+   }
+ }
+
+ save();
+ updateAll();
+}
+
+
+/* =========================
+   STUDENTS
+========================= */
+
+function renderStudents(){
+
+ let body=document.getElementById("studentsBody");
+ let search=(document.getElementById("searchStudent")?.value||"").toLowerCase();
+
+ body.innerHTML="";
+
+ students
+ .filter(s=>
+   !search ||
+   s.id.toLowerCase().includes(search) ||
+   s.name.toLowerCase().includes(search)
+ )
+ .forEach(s=>{
+
+   body.innerHTML+=`
+   <tr>
+   <td>${s.id}</td>
+   <td>${s.name}</td>
+   <td>${s.className}</td>
+   <td>${s.deduct} คะแนน</td>
+   <td>
+   <button class="action red"
+   onclick="deleteStudent('${s.id}')">ลบ</button>
+   </td>
+   </tr>
+   `;
+ });
+}
+
+function openStudentModal(){
+ document.getElementById("studentModal").style.display="flex";
+}
+
+function addStudent(){
+
+ let id=document.getElementById("newId").value.trim();
+ let name=document.getElementById("newName").value.trim();
+ let cls=document.getElementById("newClass").value.trim();
+
+ if(!id||!name){
+   alert("กรุณากรอกข้อมูลให้ครบ");
+   return;
+ }
+
+ if(students.some(s=>s.id===id)){
+   alert("มีรหัสนักเรียนนี้แล้ว");
+   return;
+ }
+
+ students.push({
+  id:id,
+  name:name,
+  className:cls||"ม.5/1",
+  deduct:0
+ });
+
+ save();
+ closeModal("studentModal");
+
+ document.getElementById("newId").value="";
+ document.getElementById("newName").value="";
+ document.getElementById("newClass").value="";
+
+ generateDuties(false);
+ updateAll();
+}
+
+function deleteStudent(id){
+
+ if(!confirm("ต้องการลบนักเรียนคนนี้หรือไม่?")) return;
+
+ students=students.filter(s=>s.id!==id);
+ save();
+ updateAll();
+}
+
+
+/* =========================
+   REQUESTS
+========================= */
+
+function openRequestModal(){
+ document.getElementById("requestModal").style.display="flex";
+}
+
+function addRequest(){
+
+ let date=document.getElementById("requestDate").value;
+ let type=document.getElementById("requestType").value;
+ let reason=document.getElementById("requestReason").value.trim();
+
+ if(!date||!reason){
+   alert("กรุณากรอกวันที่และเหตุผล");
+   return;
+ }
+
+ let studentId=
+ currentUser.role==="student"?
+ "65001":
+ students[0]?.id;
+
+ requests.push({
+  id:Date.now(),
+  date:date,
+  studentId:studentId,
+  type:type,
+  reason:reason,
+  status:"รอครูอนุมัติ"
+ });
+
+ save();
+
+ closeModal("requestModal");
+
+ document.getElementById("requestDate").value="";
+ document.getElementById("requestReason").value="";
+
+ updateAll();
+
+ alert("ส่งคำขอเรียบร้อยแล้ว");
+}
+
+function renderRequests(){
+
+ let body=document.getElementById("requestsBody");
+ body.innerHTML="";
+
+ requests.forEach(r=>{
+
+   let s=getStudent(r.studentId);
+
+   let buttons="";
+
+   if(currentUs
