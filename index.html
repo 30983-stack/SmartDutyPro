@@ -1657,3 +1657,1446 @@ document
 document
 .getElementById("username")
 .placeholder="เช่น 6
+5001";
+
+document
+.getElementById("nameLabel")
+.textContent="ชื่อ";
+
+document
+.getElementById("name")
+.placeholder="กรอกชื่อ";
+
+document
+.getElementById("passwordBox")
+.style.display="none";
+
+}
+
+function selectLeader(){
+
+currentRole="leader";
+
+document
+.querySelectorAll(".role-btn")
+.forEach(function(btn){
+  btn.classList.remove("active");
+});
+
+document
+.getElementById("leaderRole")
+.classList.add("active");
+
+document
+.getElementById("usernameLabel")
+.textContent="ชื่อผู้ใช้";
+
+document
+.getElementById("username")
+.placeholder="leader";
+
+document
+.getElementById("nameLabel")
+.textContent="ไม่ต้องกรอก";
+
+document
+.getElementById("name")
+.placeholder="ไม่ต้องกรอก";
+
+document
+.getElementById("passwordBox")
+.style.display="block";
+
+}
+
+function selectTeacher(){
+
+currentRole="teacher";
+
+document
+.querySelectorAll(".role-btn")
+.forEach(function(btn){
+  btn.classList.remove("active");
+});
+
+document
+.getElementById("teacherRole")
+.classList.add("active");
+
+document
+.getElementById("usernameLabel")
+.textContent="ชื่อผู้ใช้";
+
+document
+.getElementById("username")
+.placeholder="teacher";
+
+document
+.getElementById("nameLabel")
+.textContent="ไม่ต้องกรอก";
+
+document
+.getElementById("name")
+.placeholder="ไม่ต้องกรอก";
+
+document
+.getElementById("passwordBox")
+.style.display="block";
+
+}
+
+
+/* LOGIN */
+
+async function login(){
+
+debug("กำลังเข้าสู่ระบบ...");
+
+const username =
+document.getElementById("username").value.trim();
+
+const name =
+document.getElementById("name").value.trim();
+
+const password =
+document.getElementById("password").value;
+
+
+if(currentRole==="student"){
+
+const student =
+students.find(function(s){
+return s.id===username;
+});
+
+if(!student){
+
+toast("❌ ไม่พบรหัสนักเรียน");
+
+return;
+
+}
+
+currentUser={
+
+role:"student",
+id:student.id,
+name:name || student.name
+
+};
+
+}
+
+
+if(currentRole==="leader"){
+
+if(username!=="leader" || password!=="1234"){
+
+toast("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+
+return;
+
+}
+
+currentUser={
+
+role:"leader",
+id:"leader",
+name:"หัวหน้าเวร"
+
+};
+
+}
+
+
+if(currentRole==="teacher"){
+
+if(username!=="teacher" || password!=="1234"){
+
+toast("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง");
+
+return;
+
+}
+
+currentUser={
+
+role:"teacher",
+id:"teacher",
+name:"คุณครู"
+
+};
+
+}
+
+
+document
+.getElementById("loginPage")
+.classList.add("hidden");
+
+document
+.getElementById("app")
+.classList.remove("hidden");
+
+document
+.getElementById("currentUser")
+.textContent="👤 "+currentUser.name;
+
+setupPermissions();
+
+renderAll();
+
+await loadFirebaseData();
+
+toast("✅ เข้าสู่ระบบสำเร็จ");
+
+}
+
+
+/* LOGOUT */
+
+function logout(){
+
+currentUser=null;
+
+document
+.getElementById("app")
+.classList.add("hidden");
+
+document
+.getElementById("loginPage")
+.classList.remove("hidden");
+
+document
+.getElementById("password")
+.value="";
+
+toast("ออกจากระบบแล้ว");
+
+}
+
+
+/* PERMISSION */
+
+function setupPermissions(){
+
+const box=
+document.getElementById("teacherScheduleButton");
+
+if(currentUser.role==="teacher"){
+
+box.innerHTML=`
+
+<div class="panel">
+
+<button class="action blue"
+onclick="createSchedule()">
+🔄 สร้างตารางเวร 30 วัน
+</button>
+
+<button class="action orange"
+onclick="clearSchedule()">
+🗑️ ล้างตาราง
+</button>
+
+</div>
+
+`;
+
+}else{
+
+box.innerHTML="";
+
+}
+
+}
+
+
+/* NAVIGATION */
+
+function showPage(page,button){
+
+document
+.querySelectorAll("main section")
+.forEach(function(section){
+
+section.classList.add("hidden");
+
+});
+
+const target=
+document.getElementById("page-"+page);
+
+if(target){
+
+target.classList.remove("hidden");
+
+}
+
+document
+.querySelectorAll(".nav button")
+.forEach(function(btn){
+
+btn.classList.remove("active");
+
+});
+
+if(button){
+
+button.classList.add("active");
+
+}
+
+renderAll();
+
+}
+
+
+/* FIREBASE LOAD */
+
+async function loadFirebaseData(){
+
+if(!firebaseReady){
+
+debug("⚠️ Firebase ไม่พร้อม");
+
+return;
+
+}
+
+try{
+
+const dutySnap=
+await db.collection("duties").get();
+
+duties=[];
+
+dutySnap.forEach(function(doc){
+
+const data=doc.data();
+
+if(data.studentId){
+
+duties.push({
+
+id:doc.id,
+...data
+
+});
+
+}
+
+});
+
+
+const requestSnap=
+await db.collection("requests").get();
+
+requests=[];
+
+requestSnap.forEach(function(doc){
+
+requests.push({
+
+id:doc.id,
+...doc.data()
+
+});
+
+});
+
+debug("✅ โหลดข้อมูลสำเร็จ");
+
+renderAll();
+
+}catch(error){
+
+debug(
+"⚠️ Firebase Error: "+
+error.message
+);
+
+}
+
+}
+
+
+/* CREATE SCHEDULE */
+
+async function createSchedule(){
+
+if(currentUser.role!=="teacher"){
+
+toast("เฉพาะครูเท่านั้น");
+
+return;
+
+}
+
+if(!firebaseReady){
+
+toast("❌ Firebase ยังไม่พร้อม");
+
+return;
+
+}
+
+if(!confirm(
+"ต้องการสร้างตารางเวร 30 วันหรือไม่?"
+)){
+
+return;
+
+}
+
+try{
+
+const old=
+await db.collection("duties").get();
+
+const deleteBatch=db.batch();
+
+old.forEach(function(doc){
+
+if(doc.data().studentId){
+
+deleteBatch.delete(doc.ref);
+
+}
+
+});
+
+await deleteBatch.commit();
+
+duties=[];
+
+const batch=db.batch();
+
+const today=new Date();
+
+for(let i=0;i<30;i++){
+
+const date=new Date(today);
+
+date.setDate(today.getDate()+i);
+
+const dateString=formatDate(date);
+
+const student1=
+students[(i*2)%students.length];
+
+const student2=
+students[(i*2+1)%students.length];
+
+[student1,student2].forEach(function(student){
+
+const ref=
+db.collection("duties").doc();
+
+const item={
+
+dutyDate:dateString,
+
+studentId:student.id,
+
+studentName:student.name,
+
+room:student.room,
+
+status:"waiting",
+
+checkedBy:"",
+
+checkedAt:"",
+
+deduction:0,
+
+createdAt:
+new Date().toISOString()
+
+};
+
+batch.set(ref,item);
+
+duties.push({
+
+id:ref.id,
+...item
+
+});
+
+});
+
+}
+
+await batch.commit();
+
+toast("✅ สร้างตารางเวร 30 วันแล้ว");
+
+renderAll();
+
+}catch(error){
+
+toast(
+"❌ สร้างตารางไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+
+/* CLEAR */
+
+async function clearSchedule(){
+
+if(!firebaseReady){
+
+toast("Firebase ไม่พร้อม");
+
+return;
+
+}
+
+if(!confirm(
+"ต้องการล้างตารางทั้งหมดหรือไม่?"
+)){
+
+return;
+
+}
+
+try{
+
+const snap=
+await db.collection("duties").get();
+
+const batch=db.batch();
+
+snap.forEach(function(doc){
+
+if(doc.data().studentId){
+
+batch.delete(doc.ref);
+
+}
+
+});
+
+await batch.commit();
+
+duties=[];
+
+toast("🗑️ ล้างตารางแล้ว");
+
+renderAll();
+
+}catch(error){
+
+toast(
+"❌ ล้างไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+
+/* CHECK DUTY */
+
+async function checkDuty(id,status){
+
+if(
+currentUser.role!=="leader" &&
+currentUser.role!=="teacher"
+){
+
+toast("เฉพาะหัวหน้าเวรหรือครู");
+
+return;
+
+}
+
+const duty=
+duties.find(function(d){
+
+return d.id===id;
+
+});
+
+if(!duty){
+
+return;
+
+}
+
+duty.status=status;
+
+duty.checkedBy=currentUser.name;
+
+duty.checkedAt=
+new Date().toLocaleString("th-TH");
+
+if(firebaseReady){
+
+try{
+
+await db
+.collection("duties")
+.doc(id)
+.update({
+
+status:status,
+
+checkedBy:duty.checkedBy,
+
+checkedAt:duty.checkedAt
+
+});
+
+toast(
+status==="done"
+?"✅ ทำเวรแล้ว"
+:"❌ ไม่ทำเวร"
+);
+
+}catch(error){
+
+toast(
+"❌ บันทึกไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+renderAll();
+
+}
+
+
+/* SEND REQUEST */
+
+async function sendRequest(){
+
+if(!currentUser ||
+currentUser.role!=="student"){
+
+toast("เฉพาะนักเรียนเท่านั้น");
+
+return;
+
+}
+
+const date=
+document.getElementById("requestDate").value;
+
+const reason=
+document.getElementById("requestReason")
+.value.trim();
+
+if(!date || !reason){
+
+toast("กรุณากรอกข้อมูลให้ครบ");
+
+return;
+
+}
+
+const item={
+
+date:date,
+
+studentId:currentUser.id,
+
+studentName:currentUser.name,
+
+reason:reason,
+
+status:"pending",
+
+createdAt:
+new Date().toISOString()
+
+};
+
+try{
+
+const ref=
+await db
+.collection("requests")
+.add(item);
+
+requests.push({
+
+id:ref.id,
+...item
+
+});
+
+toast("📤 ส่งคำขอแล้ว");
+
+document.getElementById(
+"requestDate"
+).value="";
+
+document.getElementById(
+"requestReason"
+).value="";
+
+renderAll();
+
+}catch(error){
+
+toast(
+"❌ ส่งคำขอไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+
+/* UPDATE REQUEST */
+
+async function updateRequest(id,status){
+
+if(currentUser.role!=="teacher"){
+
+toast("เฉพาะครูเท่านั้น");
+
+return;
+
+}
+
+try{
+
+await db
+.collection("requests")
+.doc(id)
+.update({
+
+status:status,
+
+approvedBy:"คุณครู",
+
+approvedAt:
+new Date().toLocaleString("th-TH")
+
+});
+
+const request=
+requests.find(function(r){
+
+return r.id===id;
+
+});
+
+if(request){
+
+request.status=status;
+
+}
+
+toast(
+status==="approved"
+?"✅ อนุมัติแล้ว"
+:"❌ ปฏิเสธแล้ว"
+);
+
+renderAll();
+
+}catch(error){
+
+toast(
+"❌ ทำรายการไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+
+/* DEDUCT */
+
+async function deductPoint(id){
+
+if(currentUser.role!=="teacher"){
+
+toast("เฉพาะครูเท่านั้น");
+
+return;
+
+}
+
+const value=
+prompt(
+"กรอกจำนวนคะแนนที่ต้องการหัก",
+"1"
+);
+
+if(value===null){
+
+return;
+
+}
+
+const point=Number(value);
+
+if(isNaN(point)||point<=0){
+
+toast("กรุณากรอกตัวเลข");
+
+return;
+
+}
+
+try{
+
+await db
+.collection("duties")
+.doc(id)
+.update({
+
+deduction:point,
+
+deductionBy:"คุณครู",
+
+deductionAt:
+new Date().toLocaleString("th-TH")
+
+});
+
+const duty=
+duties.find(function(d){
+
+return d.id===id;
+
+});
+
+if(duty){
+
+duty.deduction=point;
+
+}
+
+toast(
+"✅ หักคะแนน "+point+" คะแนนแล้ว"
+);
+
+renderAll();
+
+}catch(error){
+
+toast(
+"❌ บันทึกไม่ได้: "+
+error.message
+);
+
+}
+
+}
+
+
+/* RENDER ALL */
+
+function renderAll(){
+
+renderDashboard();
+
+renderSchedule();
+
+renderCheck();
+
+renderRequests();
+
+renderReports();
+
+renderStudents();
+
+}
+
+
+/* DASHBOARD */
+
+function renderDashboard(){
+
+const total=duties.length;
+
+const done=
+duties.filter(function(d){
+return d.status==="done";
+}).length;
+
+const missed=
+duties.filter(function(d){
+return d.status==="missed";
+}).length;
+
+const waiting=
+duties.filter(function(d){
+return d.status==="waiting";
+}).length;
+
+document.getElementById(
+"statStudents"
+).textContent=students.length;
+
+document.getElementById(
+"statDuties"
+).textContent=total;
+
+document.getElementById(
+"statDone"
+).textContent=done;
+
+document.getElementById(
+"statMissed"
+).textContent=missed;
+
+document.getElementById(
+"statWaiting"
+).textContent=waiting;
+
+document.getElementById(
+"statRequests"
+).textContent=
+requests.filter(function(r){
+return r.status==="pending";
+}).length;
+
+const rate=
+total
+?Math.round(done/total*100)
+:0;
+
+document.getElementById(
+"dashboardRate"
+).textContent=rate+"%";
+
+document.getElementById(
+"progressBar"
+).style.width=rate+"%";
+
+}
+
+
+/* SCHEDULE */
+
+function renderSchedule(){
+
+const table=
+document.getElementById(
+"scheduleTable"
+);
+
+if(!table)return;
+
+if(duties.length===0){
+
+table.innerHTML=`
+
+<tr>
+<td colspan="5"
+style="text-align:center">
+ยังไม่มีตารางเวร
+</td>
+</tr>
+
+`;
+
+return;
+
+}
+
+table.innerHTML=
+duties.map(function(d){
+
+return `
+
+<tr>
+
+<td>${escapeHtml(d.dutyDate||"-")}</td>
+
+<td>${escapeHtml(d.studentId||"-")}</td>
+
+<td>${escapeHtml(d.studentName||"-")}</td>
+
+<td>${statusHtml(d.status)}</td>
+
+<td>${escapeHtml(d.checkedBy||"-")}</td>
+
+</tr>
+
+`;
+
+}).join("");
+
+}
+
+
+/* CHECK */
+
+function renderCheck(){
+
+const table=
+document.getElementById(
+"checkTable"
+);
+
+if(!table)return;
+
+if(duties.length===0){
+
+table.innerHTML=`
+
+<tr>
+<td colspan="5"
+style="text-align:center">
+ยังไม่มีรายการเวร
+</td>
+</tr>
+
+`;
+
+return;
+
+}
+
+table.innerHTML=
+duties.map(function(d){
+
+let buttons="ดูสถานะ";
+
+if(
+currentUser &&
+(
+currentUser.role==="leader" ||
+currentUser.role==="teacher"
+)
+){
+
+buttons=`
+
+<button
+class="action green"
+onclick="checkDuty('${d.id}','done')">
+✓ ทำแล้ว
+</button>
+
+<button
+class="action red"
+onclick="checkDuty('${d.id}','missed')">
+✗ ไม่ทำ
+</button>
+
+`;
+
+if(
+currentUser.role==="teacher" &&
+d.status==="missed"
+){
+
+buttons+=`
+
+<button
+class="action orange"
+onclick="deductPoint('${d.id}')">
+💰 หักคะแนน
+</button>
+
+`;
+
+}
+
+}
+
+return `
+
+<tr>
+
+<td>${escapeHtml(d.dutyDate||"-")}</td>
+
+<td>${escapeHtml(d.studentId||"-")}</td>
+
+<td>${escapeHtml(d.studentName||"-")}</td>
+
+<td>${statusHtml(d.status)}</td>
+
+<td>${buttons}</td>
+
+</tr>
+
+`;
+
+}).join("");
+
+}
+
+
+/* REQUESTS */
+
+function renderRequests(){
+
+const table=
+document.getElementById(
+"requestTable"
+);
+
+if(!table)return;
+
+let list=requests;
+
+if(
+currentUser &&
+currentUser.role==="student"
+){
+
+list=requests.filter(function(r){
+
+return r.studentId===currentUser.id;
+
+});
+
+}
+
+if(list.length===0){
+
+table.innerHTML=`
+
+<tr>
+
+<td colspan="5"
+style="text-align:center">
+
+ยังไม่มีคำขอ
+
+</td>
+
+</tr>
+
+`;
+
+return;
+
+}
+
+table.innerHTML=
+list.map(function(r){
+
+let actions="-";
+
+if(
+currentUser &&
+currentUser.role==="teacher" &&
+r.status==="pending"
+){
+
+actions=`
+
+<button
+class="action green"
+onclick="updateRequest('${r.id}','approved')">
+✓ อนุมัติ
+</button>
+
+<button
+class="action red"
+onclick="updateRequest('${r.id}','rejected')">
+✗ ปฏิเสธ
+</button>
+
+`;
+
+}
+
+return `
+
+<tr>
+
+<td>${escapeHtml(r.date||"-")}</td>
+
+<td>${escapeHtml(r.studentName||"-")}</td>
+
+<td>${escapeHtml(r.reason||"-")}</td>
+
+<td>${requestStatus(r.status)}</td>
+
+<td>${actions}</td>
+
+</tr>
+
+`;
+
+}).join("");
+
+}
+
+
+/* REPORT */
+
+function renderReports(){
+
+const total=duties.length;
+
+const done=
+duties.filter(function(d){
+return d.status==="done";
+}).length;
+
+const missed=
+duties.filter(function(d){
+return d.status==="missed";
+}).length;
+
+const waiting=
+duties.filter(function(d){
+return d.status==="waiting";
+}).length;
+
+function percent(value){
+
+return total
+?Math.round(value/total*100)
+:0;
+
+}
+
+document.getElementById(
+"reportDone"
+).textContent=percent(done)+"%";
+
+document.getElementById(
+"reportMissed"
+).textContent=percent(missed)+"%";
+
+document.getElementById(
+"reportWaiting"
+).textContent=percent(waiting)+"%";
+
+
+const table=
+document.getElementById(
+"reportTable"
+);
+
+if(!table)return;
+
+table.innerHTML=
+students.map(function(s){
+
+const list=
+duties.filter(function(d){
+
+return d.studentId===s.id;
+
+});
+
+const d=
+list.filter(function(x){
+
+return x.status==="done";
+
+}).length;
+
+const m=
+list.filter(function(x){
+
+return x.status==="missed";
+
+}).length;
+
+const w=
+list.filter(function(x){
+
+return x.status==="waiting";
+
+}).length;
+
+return `
+
+<tr>
+
+<td>${s.id}</td>
+
+<td>${escapeHtml(s.name)}</td>
+
+<td>${list.length}</td>
+
+<td>✓ ${d}</td>
+
+<td>✗ ${m}</td>
+
+<td>⏳ ${w}</td>
+
+</tr>
+
+`;
+
+}).join("");
+
+}
+
+
+/* STUDENTS */
+
+function renderStudents(){
+
+const table=
+document.getElementById(
+"studentTable"
+);
+
+if(!table)return;
+
+table.innerHTML=
+students.map(function(s){
+
+return `
+
+<tr>
+
+<td>${s.id}</td>
+
+<td>${escapeHtml(s.name)}</td>
+
+<td>${s.room}</td>
+
+</tr>
+
+`;
+
+}).join("");
+
+}
+
+
+/* STATUS */
+
+function statusHtml(status){
+
+if(status==="done"){
+
+return `
+<span class="status done">
+✓ ทำแล้ว
+</span>
+`;
+
+}
+
+if(status==="missed"){
+
+return `
+<span class="status missed">
+✗ ไม่ทำ
+</span>
+`;
+
+}
+
+return `
+<span class="status waiting">
+⏳ รอตรวจ
+</span>
+`;
+
+}
+
+
+function requestStatus(status){
+
+if(status==="approved"){
+
+return `
+<span class="status done">
+✓ อนุมัติ
+</span>
+`;
+
+}
+
+if(status==="rejected"){
+
+return `
+<span class="status missed">
+✗ ปฏิเสธ
+</span>
+`;
+
+}
+
+return `
+<span class="status waiting">
+⏳ รออนุมัติ
+</span>
+`;
+
+}
+
+
+/* DATE */
+
+function formatDate(date){
+
+const y=date.getFullYear();
+
+const m=
+String(date.getMonth()+1)
+.padStart(2,"0");
+
+const d=
+String(date.getDate())
+.padStart(2,"0");
+
+return y+"-"+m+"-"+d;
+
+}
+
+
+/* ESCAPE */
+
+function escapeHtml(value){
+
+return String(value||"")
+.replace(/&/g,"&amp;")
+.replace(/</g,"&lt;")
+.replace(/>/g,"&gt;")
+.replace(/"/g,"&quot;")
+.replace(/'/g,"&#039;");
+
+}
+
+
+/* DEFAULT */
+
+const requestDate=
+document.getElementById(
+"requestDate"
+);
+
+if(requestDate){
+
+requestDate.value=
+formatDate(new Date());
+
+}
+
+
+/* START */
+
+debug(
+firebaseReady
+?"✅ ระบบพร้อมใช้งาน"
+:"⚠️ Firebase ยังไม่พร้อม"
+);
+
+</script>
+
+</body>
+</html>
