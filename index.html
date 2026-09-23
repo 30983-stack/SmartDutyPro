@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Smart Duty System</title>
+
+<style>
+*{box-sizing:border-box;font-family:Arial,Tahoma,sans-serif}
+body{margin:0;background:#f1f5f9;color:#1e293b}
+.hidden{display:none!important}
+button{border:0;border-radius:10px;padding:10px 15px;cursor:pointer;font-weight:bold}
+.login{
+ min-height:100vh;display:flex;align-items:center;justify-content:center;
+ background:linear-gradient(135deg,#2563eb,#7c3aed);padding:20px
+}
+.login-box{
+ width:100%;max-width:420px;background:white;padding:30px;
+ border-radius:24px;box-shadow:0 20px 50px #0004;text-align:center
+}
+.logo{font-size:55px}
+.login-box h1{margin:5px 0}
+.login-box p{color:#64748b}
+input,select{
+ width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;
+ border-radius:10px;font-size:16px
+}
+.login-btn{width:100%;background:#2563eb;color:white;margin-top:10px}
+.hint{font-size:13px;color:#64748b;margin-top:15px}
+
+#app{min-height:100vh}
+header{
+ background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;
+ padding:18px 22px;display:flex;justify-content:space-between;
+ align-items:center;gap:10px
+}
+header h2{margin:0}
+.logout{background:#fff;color:#dc2626}
+
+nav{
+ display:flex;gap:8px;padding:12px;background:white;
+ box-shadow:0 2px 8px #0001;overflow-x:auto
+}
+nav button{background:#e2e8f0;color:#334155;white-space:nowrap}
+nav button.active{background:#2563eb;color:white}
+
+main{padding:20px;max-width:1200px;margin:auto}
+.page h2{margin-top:0}
+
+.cards{
+ display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:15px
+}
+.card{
+ background:white;padding:20px;border-radius:18px;
+ box-shadow:0 4px 15px #0001
+}
+.card .num{font-size:30px;font-weight:bold;color:#2563eb}
+.card small{color:#64748b}
+
+table{
+ width:100%;border-collapse:collapse;background:white;
+ border-radius:15px;overflow:hidden
+}
+th,td{padding:12px;border-bottom:1px solid #e2e8f0;text-align:left}
+th{background:#eff6ff}
+
+.status{font-size:22px}
+.ok{color:#16a34a}
+.no{color:#dc2626}
+.wait{color:#d97706}
+
+.box{
+ background:white;padding:18px;border-radius:18px;
+ box-shadow:0 4px 15px #0001;margin-top:15px
+}
+.primary{background:#2563eb;color:white}
+.green{background:#16a34a;color:white}
+.red{background:#dc2626;color:white}
+.orange{background:#f59e0b;color:white}
+.gray{background:#64748b;color:white}
+
+@media(max-width:600px){
+ header h2{font-size:18px}
+ main{padding:12px}
+ th,td{padding:8px;font-size:14px}
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="login">
+<div class="login-box">
+
+<div class="logo">🏫</div>
+<h1>Smart Duty</h1>
+<p>ระบบจัดเวรและหัวหน้าเวรเช็ค</p>
+
+<select id="role">
+<option value="student">นักเรียน</option>
+<option value="leader">หัวหน้าเวร</option>
+<option value="teacher">ครู</option>
+</select>
+
+<input id="username" placeholder="รหัสนักเรียน / ชื่อผู้ใช้">
+<input id="password" type="password" placeholder="รหัสผ่าน">
+
+<button class="login-btn" onclick="login()">เข้าสู่ระบบ</button>
+
+<div class="hint">
+นักเรียนใช้รหัส 65001 - 65008<br>
+หัวหน้าเวร: leader / 1234<br>
+ครู: teacher / 1234
+</div>
+
+</div>
+</div>
+
+
+<!-- APP -->
+<div id="app" class="hidden">
+
+<header>
+<div>
+<h2>🏫 Smart Duty System</h2>
+<div id="userInfo"></div>
+</div>
+<button class="logout" onclick="logout()">ออกจากระบบ</button>
+</header>
+
+<nav id="menu"></nav>
+
+<main>
+
+<section id="dashboard" class="page">
+<h2>📊 Dashboard</h2>
+<div id="stats" class="cards"></div>
+<div class="box">
+<h3>📢 การแจ้งเตือน</h3>
+<div id="notice">กำลังโหลด...</div>
+</div>
+</section>
+
+<section id="schedule" class="page hidden">
+<h2>📅 ตารางเวร</h2>
+<div id="scheduleBox"></div>
+</section>
+
+<section id="check" class="page hidden">
+<h2>✅ หัวหน้าเวรเช็ค</h2>
+<div id="checkBox"></div>
+</section>
+
+<section id="requests" class="page hidden">
+<h2>📝 คำขอของนักเรียน</h2>
+<div id="requestBox"></div>
+</section>
+
+<section id="report" class="page hidden">
+<h2>📈 รายงาน</h2>
+<div id="reportBox"></div>
+</section>
+
+<section id="students" class="page hidden">
+<h2>👨‍🎓 รายชื่อนักเรียน</h2>
+<div id="studentBox"></div>
+</section>
+
+<section id="settings" class="page hidden">
+<h2>⚙️ ตั้งค่าระบบ</h2>
+<div class="box">
+<button class="red" onclick="resetData()">รีเซ็ตข้อมูลทั้งหมด</button>
+</div>
+</section>
+
+</main>
+</div>
+
+<script>const students=[
+ {id:"65001",name:"นักเรียน 65001",deducted:0},
+ {id:"65002",name:"นักเรียน 65002",deducted:0},
+ {id:"65003",name:"นักเรียน 65003",deducted:0},
+ {id:"65004",name:"นักเรียน 65004",deducted:0},
+ {id:"65005",name:"นักเรียน 65005",deducted:0},
+ {id:"65006",name:"นักเรียน 65006",deducted:0},
+ {id:"65007",name:"นักเรียน 65007",deducted:0},
+ {id:"65008",name:"นักเรียน 65008",deducted:0}
+];
+
+let currentUser=null;
+let duties=JSON.parse(localStorage.getItem("duties")||"[]");
+let requests=JSON.parse(localStorage.getItem("requests")||"[]");
+
+function save(){
+ localStorage.setItem("duties",JSON.stringify(duties));
+ localStorage.setItem("requests",JSON.stringify(requests));
+ localStorage.setItem("students",JSON.stringify(students));
+}
+
+function today(){
+ let d=new Date();
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function addDays(date,n){
+ let d=new Date(date+"T00:00:00");
+ d.setDate(d.getDate()+n);
+ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
+function thaiDate(s){
+ let d=new Date(s+"T00:00:00");
+ return d.toLocaleDateString("th-TH",{
+  day:"numeric",month:"short",year:"numeric"
+ });
+}
+
+function makeSchedule(){
+ if(duties.length)return;
+
+ for(let i=0;i<30;i++){
+  let date=addDays(today(),i);
+  let a=students[(i*2)%students.length].id;
+  let b=students[(i*2+1)%students.length].id;
+
+  duties.push({
+   id:date+"-"+a,
+   date:date,
+   student:a,
+   status:"waiting",
+   note:""
+  });
+
+  duties.push({
+   id:date+"-"+b,
+   date:date,
+   student:b,
+   status:"waiting",
+   note:""
+  });
+ }
+ save();
+}
+
+function login(){
+ let role=document.getElementById("role").value;
+ let user=document.getElementById("username").value.trim();
+ let pass=document.getElementById("password").value;
+
+ if(role==="student"){
+  let s=students.find(x=>x.id===user);
+  if(!s){
+   alert("ไม่พบรหัสนักเรียน");
+   return;
+  }
+  currentUser={role:"student",id:user,name:s.name};
+ }
+
+ else if(role==="leader"){
+  if(user!=="leader"||pass!=="1234"){
+   alert("ชื่อผู้ใช้หรือรหัสผ่านหัวหน้าเวรไม่ถูกต้อง");
+   return;
+  }
+  currentUser={role:"leader",name:"หัวหน้าเวร"};
+ }
+
+ else{
+  if(user!=="teacher"||pass!=="1234"){
+   alert("ชื่อผู้ใช้หรือรหัสผ่านครูไม่ถูกต้อง");
+   return;
+  }
+  currentUser={role:"teacher",name:"คุณครู"};
+ }
+
+ document.getElementById("loginPage").classList.add("hidden");
+ document.getElementById("app").classList.remove("hidden");
+
+ document.getElementById("userInfo").textContent=
+  currentUser.name+" • "+currentUser.role;
+
+ buildMenu();
+ showPage("dashboard");
+}
+
+function logout(){
+ currentUser=null;
+ document.getElementById("app").classList.add("hidden");
+ document.getElementById("loginPage").classList.remove("hidden");
+ document.getElementById("username").value="";
+ document.getElementById("password").value="";
+}
+
+function buildMenu(){
+ let menu=document.getElementById("menu");
+
+ let html=
+ `<button onclick="showPage('dashboard')">📊 หน้าหลัก</button>
+  <button onclick="showPage('schedule')">📅 ตารางเวร</button>`;
+
+ if(currentUser.role==="leader"||currentUser.role==="teacher"){
+  html+=`<button onclick="showPage('check')">✅ เช็คเวร</button>`;
+ }
+
+ if(currentUser.role==="student"){
+  html+=`<button onclick="showPage('requests')">📝 ขอหยุด/สลับเวร</button>`;
+ }
+
+ if(currentUser.role==="teacher"){
+  html+=`
+   <button onclick="showPage('requests')">📨 คำขอ</button>
+   <button onclick="showPage('students')">👨‍🎓 นักเรียน</button>
+   <button onclick="showPage('report')">📈 รายงาน</button>
+   <button onclick="showPage('settings')">⚙️ ตั้งค่า</button>`;
+ }
+
+ menu.innerHTML=html;
+}
+
+function showPage(id){
+ document.querySelectorAll(".page").forEach(x=>x.classList.add("hidden"));
+ document.getElementById(id).classList.remove("hidden");
+
+ if(id==="dashboard")renderDashboard();
+ if(id==="schedule")renderSchedule();
+ if(id==="check")renderCheck();
+ if(id==="requests")renderRequests();
+ if(id==="report")renderReport();
+ if(id==="students")renderStudents();
+}
+
+function renderDashboard(){
+ let list=duties;
+
+ if(currentUser.role==="student")
+  list=list.filter(x=>x.student===currentUser.id);
+
+ let done=list.filter(x=>x.status==="done").length;
+ let missed=list.filter(x=>x.status==="missed").length;
+ let wait=list.filter(x=>x.status==="waiting").length;
+
+ document.getElementById("stats").innerHTML=`
+ <div class="card">
+  <small>เวรทั้งหมด</small>
+  <div class="num">${list.length}</div>
+ </div>
+ <div class="card">
+  <small>ทำแล้ว</small>
+  <div class="num">${done}</div>
+  <span class="ok">✓ เรียบร้อย</span>
+ </div>
+ <div class="card">
+  <small>ไม่ทำเวร</small>
+  <div class="num">${missed}</div>
+  <span class="no">✗ ต้องติดตาม</span>
+ </div>
+ <div class="card">
+  <small>รอตรวจ</small>
+  <div class="num">${wait}</div>
+  <span class="wait">⏳ รอเช็ค</span>
+ </div>`;
+
+ let bad=list.filter(x=>x.status==="missed").length;
+
+ document.getElementById("notice").innerHTML=
+  bad
+  ? `⚠️ พบรายการไม่ทำเวร ${bad} รายการ`
+  : `🎉 ยังไม่มีรายการไม่ทำเวร`;
+}
+
+function renderSchedule(){
+ let list=duties;
+
+ if(currentUser.role==="student")
+  list=list.filter(x=>x.student===currentUser.id);
+
+ let html=`
+ <div class="box">
+ <table>
+ <tr><th>วันที่</th><th>นักเรียน</th><th>สถานะ</th></tr>`;
+
+ list.forEach(d=>{
+  let s=students.find(x=>x.id===d.student);
+  let icon=d.status==="done"?"✓":
+           d.status==="missed"?"✗":"⏳";
+
+  let cls=d.status==="done"?"ok":
+          d.status==="missed"?"no":"wait";
+
+  html+=`
+  <tr>
+   <td>${thaiDate(d.date)}</td>
+   <td>${s?s.name:d.student}</td>
+   <td class="status ${cls}">${icon}</td>
+  </tr>`;
+ });
+
+ html+=`</table></div>`;
+ document.getElementById("scheduleBox").innerHTML=html;
+}
+
+function renderCheck(){
+ if(currentUser.role==="student"){
+  document.getElementById("checkBox").innerHTML="ไม่มีสิทธิ์เข้าหน้านี้";
+  return;
+ }
+
+ let html=`<div class="box"><table>
+ <tr><th>วันที่</th><th>นักเรียน</th><th>สถานะ</th><th>จัดการ</th></tr>`;
+
+ duties.forEach(d=>{
+  let s=students.find(x=>x.id===d.student);
+
+  let icon=d.status==="done"?"✓":
+           d.status==="missed"?"✗":"⏳";
+
+  html+=`
+  <tr>
+   <td>${thaiDate(d.date)}</td>
+   <td>${s?s.name:d.student}</td>
+   <td class="status">${icon}</td>
+   <td>
+    <button class="green" onclick="setStatus('${d.id}','done')">✓ ทำแล้ว</button>
+    <button class="red" onclick="setStatus('${d.id}','missed')">✗ ไม่ทำ</button>
+   </td>
+  </tr>`;
+ });
+
+ html+=`</table></div>`;
+ document.getElementById("checkBox").innerHTML=html;
+}
+
+function setStatus(id,status){
+ let d=duties.find(x=>x.id===id);
+ if(!d)return;
+
+ d.status=status;
+
+ if(status==="missed"){
+  d.note="แจ้งครู: นักเรียนไม่ทำเวร";
+  alert("บันทึกว่าไม่ทำเวรแล้ว\nระบบสร้างการแจ้งเตือนครูให้แล้ว");
+ }
+
+ save();
+ renderCheck();
+ renderDashboard();
+}
+
+makeSchedule();
+save();function renderRequests(){
+ let box=document.getElementById("requestBox");
+
+ if(currentUser.role==="student"){
+  let mine=requests.filter(x=>x.student===currentUser.id);
+
+  let html=`
+  <div class="box">
+   <h3>➕ ส่งคำขอ</h3>
+   <select id="reqType">
+    <option value="stop">ขอหยุดเวร</option>
+    <option value="swap">ขอสลับเวร</option>
+   </select>
+   <input id="reqReason" placeholder="เหตุผล เช่น ไม่สบาย / มีธุระ">
+   <button class="primary" onclick="sendRequest()">ส่งคำขอ</button>
+  </div>
+  <div class="box"><h3>📋 คำขอของฉัน</h3>`;
+
+  if(!mine.length) html+="ยังไม่มีคำขอ";
+
+  mine.forEach(r=>{
+   html+=`
+   <p>
+   ${r.type==="stop"?"🛑 ขอหยุดเวร":"🔄 ขอสลับเวร"}
+   — ${r.reason}
+   <b>${r.status}</b>
+   </p>`;
+  });
+
+  html+="</div>";
+  box.innerHTML=html;
+  return;
+ }
+
+ let html=`<div class="box"><table>
+ <tr><th>นักเรียน</th><th>ประเภท</th><th>เหตุผล</th><th>สถานะ</th><th>จัดการ</th></tr>`;
+
+ requests.forEach(r=>{
+  let s=students.find(x=>x.id===r.student);
+
+  html+=`
+  <tr>
+   <td>${s?s.name:r.student}</td>
+   <td>${r.type==="stop"?"ขอหยุดเวร":"ขอสลับเวร"}</td>
+   <td>${r.reason}</td>
+   <td>${r.status}</td>
+   <td>`;
+
+  if(r.status==="รออนุมัติ"&&currentUser.role==="teacher"){
+   html+=`
+   <button class="green" onclick="approveRequest('${r.id}')">✓ อนุมัติ</button>
+   <button class="red" onclick="rejectRequest('${r.id}')">✗ ปฏิเสธ</button>`;
+  }
+
+  html+=`</td></tr>`;
+ });
+
+ html+=`</table></div>`;
+ box.innerHTML=html;
+}
+
+function sendRequest(){
+ let type=document.getElementById("reqType").value;
+ let reason=document.getElementById("reqReason").value.trim();
+
+ if(!reason){
+  alert("กรุณาใส่เหตุผล");
+  return;
+ }
+
+ requests.push({
+  id:Date.now().toString(),
+  student:currentUser.id,
+  type:type,
+  reason:reason,
+  status:"รออนุมัติ"
+ });
+
+ save();
+ alert("ส่งคำขอให้ครูเรียบร้อยแล้ว");
+ renderRequests();
+}
+
+function approveRequest(id){
+ let r=requests.find(x=>x.id===id);
+ if(!r)return;
+
+ r.status="อนุมัติแล้ว";
+
+ if(r.type==="stop"){
+  duties.forEach(d=>{
+   if(d.student===r.student && d.date>=today())
+    d.status="waiting";
+  });
+ }
+
+ save();
+ renderRequests();
+ renderDashboard();
+}
+
+function rejectRequest(id){
+ let r=requests.find(x=>x.id===id);
+ if(!r)return;
+
+ r.status="ไม่อนุมัติ";
+ save();
+ renderRequests();
+}
+
+function renderReport(){
+ let total=duties.length;
+ let done=duties.filter(x=>x.status==="done").length;
+ let missed=duties.filter(x=>x.status==="missed").length;
+ let wait=duties.filter(x=>x.status==="waiting").length;
+
+ let percent=total?Math.round(done/total*100):0;
+
+ document.getElementById("reportBox").innerHTML=`
+ <div class="cards">
+  <div class="card">
+   <small>เวรทั้งหมด</small>
+   <div class="num">${total}</div>
+  </div>
+  <div class="card">
+   <small>ทำแล้ว</small>
+   <div class="num">${done}</div>
+  </div>
+  <div class="card">
+   <small>ไม่ทำ</small>
+   <div class="num">${missed}</div>
+  </div>
+  <div class="card">
+   <small>รอตรวจ</small>
+   <div class="num">${wait}</div>
+  </div>
+ </div>
+
+ <div class="box">
+  <h3>📊 อัตราการทำเวร</h3>
+  <h2>${percent}%</h2>
+  <progress value="${percent}" max="100" style="width:100%;height:25px"></progress>
+ </div>`;
+}
+
+function renderStudents(){
+ let html=`
+ <div class="box">
+ <table>
+ <tr><th>รหัส</th><th>นักเรียน</th><th>หักคะแนน</th></tr>`;
+
+ students.forEach(s=>{
+  html+=`
+  <tr>
+   <td>${s.id}</td>
+   <td>${s.name}</td>
+   <td>${s.deducted} คะแนน</td>
+  </tr>`;
+ });
+
+ html+=`</table></div>`;
+
+ if(currentUser.role==="teacher"){
+  html+=`
+  <div class="box">
+   <h3>⚠️ หักคะแนนนักเรียน</h3>
+   <select id="deductStudent">
+    ${students.map(s=>`<option value="${s.id}">${s.id} - ${s.name}</option>`).join("")}
+   </select>
+   <input id="deductPoint" type="number" min="1" placeholder="จำนวนคะแนนที่หัก">
+   <button class="red" onclick="deductPoint()">ยืนยันหักคะแนน</button>
+  </div>`;
+ }
+
+ document.getElementById("studentBox").innerHTML=html;
+}
+
+function deductPoint(){
+ let id=document.getElementById("deductStudent").value;
+ let point=parseInt(document.getElementById("deductPoint").value);
+
+ if(!point||point<1){
+  alert("กรุณาระบุจำนวนคะแนน");
+  return;
+ }
+
+ let s=students.find(x=>x.id===id);
+ if(!s)return;
+
+ if(!confirm(`ยืนยันหักคะแนน ${point} คะแนน จาก ${s.name}?`))
+  return;
+
+ s.deducted+=point;
+ save();
+ alert("หักคะแนนเรียบร้อยแล้ว");
+ renderStudents();
+}
+
+function emailTeacher(){
+ let missed=duties.filter(x=>x.status==="missed");
+
+ if(!missed.length){
+  alert("ยังไม่มีรายการไม่ทำเวร");
+  return;
+ }
+
+ let body="แจ้งนักเรียนไม่ทำเวร%0A%0A";
+
+ missed.forEach(d=>{
+  let s=students.find(x=>x.id===d.student);
+  body+=`${d.date} - ${s?s.name:d.student}%0A`;
+ });
+
+ window.location.href=
+ "mailto:?subject=แจ้งนักเรียนไม่ทำเวร&body="+body;
+}
+
+function resetData(){
+ if(!confirm("ต้องการรีเซ็ตข้อมูลทั้งหมดหรือไม่?"))return;
+
+ localStorage.removeItem("duties");
+ localStorage.removeItem("requests");
+ localStorage.removeItem("students");
+
+ location.reload();
+}
+
+function renderAll(){
+ renderDashboard();
+ renderSchedule();
+
+ if(currentUser.role!=="student")
+  renderCheck();
+
+ renderRequests();
+ renderReport();
+ renderStudents();
+}
+
+makeSchedule();
+renderAll();
+
+</script>
+</body>
+</html>
