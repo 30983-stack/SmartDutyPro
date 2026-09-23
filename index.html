@@ -178,7 +178,26 @@ th{background:#eff6ff}
 </main>
 </div>
 
-<script>const students=[
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCL-QWkbI49b17ihSNWetzwPDfzn61pnH8",
+  authDomain: "smart-duty-school.firebaseapp.com",
+  projectId: "smart-duty-school",
+  storageBucket: "smart-duty-school.firebasestorage.app",
+  messagingSenderId: "189251704815",
+  appId: "1:189251704815:web:1660ceddacaceffdf8081a",
+  measurementId: "G-4PEW17FX51"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+console.log("🔥 Firebase เชื่อมต่อสำเร็จ");
+
+const students=[
  {id:"65001",name:"นักเรียน 65001",deducted:0},
  {id:"65002",name:"นักเรียน 65002",deducted:0},
  {id:"65003",name:"นักเรียน 65003",deducted:0},
@@ -689,7 +708,15 @@ function renderAll(){
 
 makeSchedule();
 renderAll();
-
+window.login = login;
+window.logout = logout;
+window.showPage = showPage;
+window.setStatus = setStatus;
+window.sendRequest = sendRequest;
+window.approveRequest = approveRequest;
+window.rejectRequest = rejectRequest;
+window.deductPoint = deductPoint;
+window.resetData = resetData;
 </script>
 </body>
 </html>
